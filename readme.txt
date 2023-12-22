@@ -8,3 +8,7 @@ tsc --init
 - Update "outDir": "./dist"
 
 - update "rootDir": "./src"
+
+npm install websocket
+
+npm i --save @types/websocket
