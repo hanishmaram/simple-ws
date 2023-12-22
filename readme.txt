@@ -12,3 +12,5 @@ tsc --init
 npm install websocket
 
 npm i --save @types/websocket
+
+npm i zod

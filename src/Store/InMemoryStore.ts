@@ -1,4 +1,4 @@
-import { Chat, Store, UserId } from "./Store/Store";
+import { Chat, Store, UserId } from "./Store";
 
 let globalChatId = 0;
 
@@ -20,7 +20,7 @@ export class InMemoryStore implements Store {
         this.store.set(roomId, {
             roomId,
             chats: []
-        });
+        }); 
 
     }
 
@@ -62,6 +62,7 @@ export class InMemoryStore implements Store {
             return [];
         }
 
+        // TODO: Optimize this code
         const chat = room.chats.find(({ id }) => id === chatId);
 
         if (chat) {
