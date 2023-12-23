@@ -1,6 +1,7 @@
 import { server as WebSocketServer, connection } from "websocket";
 import http from "http";
-import { IncomingMessage, SupportedMessage } from "./messages";
+import { IncomingMessage, SupportedMessage } from "./messages/incomingMessages";
+import { OutgoingMessage, SupportedMessage as OutgoingSupportedMessage  } from "./messages/outgoingMessages";
 import { InMemoryStore } from "./Store/InMemoryStore";
 import { UserManager } from "./UserManager";
 
@@ -20,7 +21,7 @@ server.listen(8080, function() {
 
 const wsServer = new WebSocketServer({
     httpServer: server,    
-    autoAcceptConnections: false
+    autoAcceptConnections: true
 });
 
 function originIsAllowed(origin: string) {
@@ -29,7 +30,10 @@ function originIsAllowed(origin: string) {
 }
 
 wsServer.on('request', function(request) {
+    console.log('on connection');
     if (!originIsAllowed(request.origin)) {
+
+        console.log('conneciton allowed');
       // Make sure we only accept requests from an allowed origin
       request.reject();
       console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');
@@ -39,8 +43,9 @@ wsServer.on('request', function(request) {
     var connection = request.accept('echo-protocol', request.origin);
     console.log((new Date()) + ' Connection accepted.');
     connection.on('message', function(message) {
+        console.log('on message')
         if (message.type === 'utf8') {
-
+            console.log('on message type utf8')
             try {
                 messageHandler(connection,JSON.parse(message.utf8Data));
             } catch (e) {
@@ -62,6 +67,9 @@ wsServer.on('request', function(request) {
 
 
 function messageHandler(ws:connection, message: IncomingMessage) {
+
+    console.log(`Incoming message:${JSON.stringify(message)}`);
+
     if(message.type == SupportedMessage.JoinRoom) {
         const payload = message.payload;
         userManager.addUser(payload.name,payload.userId, payload.roomId, ws);
@@ -74,13 +82,48 @@ function messageHandler(ws:connection, message: IncomingMessage) {
             console.error("User not found in the db");
             return;
         }
-        store.addChat(payload.roomId,payload.userId,payload.message,user.name);
+        let chat = store.addChat(payload.roomId,payload.userId,payload.message,user.name);
+
+        if(!chat) {
+            console.error("chat not found");
+            return;
+        }
 
         // TODO: add broadcast logic here
+
+        const outgoingPayload : OutgoingMessage = {
+            type: OutgoingSupportedMessage.AddChat,
+            payload : {
+                chatId: chat.id,
+                roomId: payload.roomId,
+                message: payload.message,
+                name: user.name,
+                upvotes: 0
+            }
+        }
+
+        userManager.broadcast(payload.roomId, payload.userId, outgoingPayload);
     }
 
     if(message.type == SupportedMessage.UpvotedMessage) {
         const payload = message.payload;
-        store.upvote(payload.userId, payload.roomId, payload.chatId);
+        let chat = store.upvote(payload.userId, payload.roomId, payload.chatId);
+
+        if(!chat) {
+            console.error("chat not found");
+            return;
+        }
+
+        const outgoingPayload : OutgoingMessage = {
+            type: OutgoingSupportedMessage.UpdateChat,
+            payload : {
+                chatId: chat.id,
+                roomId: payload.roomId,
+                upvotes: chat.upvotes.length
+            }
+        }
+
+        userManager.broadcast(payload.roomId, payload.userId, outgoingPayload);
+
     }
 }

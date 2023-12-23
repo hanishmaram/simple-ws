@@ -38,36 +38,42 @@ export class InMemoryStore implements Store {
         //return this.store.get(roomId)?.chats.reverse().slice(0,offset).slice(offset,limit);
     }
 
-    addChat(roomId: string, userId: UserId, message: string, name: string) {
+    addChat(roomId: string, userId: UserId, message: string, name: string) : Chat | null {
         const room = this.store.get(roomId);
 
         if (!room) {
-            return [];
+            return null;
         }
 
-        room.chats.push({
+        let chat = {
             id: (globalChatId++).toString(),
             userId,
             name,
             message,
             upvotes: []
-        })
+        };
+
+        room.chats.push(chat);
+        return chat;
     }
 
-    upvote(userId: UserId, roomId: string, chatId: string) {
+    upvote(userId: UserId, roomId: string, chatId: string) : Chat | null {
 
         const room = this.store.get(roomId);
 
         if (!room) {
-            return [];
+            return null;
         }
 
         // TODO: Optimize this code
         const chat = room.chats.find(({ id }) => id === chatId);
 
-        if (chat) {
-            chat.upvotes.push(userId);
+        if (!chat) {
+            console.error("chat not found");
+            return null;
         }
+        chat.upvotes.push(userId);
+        return chat;
 
     }
 
