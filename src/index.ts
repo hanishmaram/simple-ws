@@ -15,13 +15,13 @@ var server = http.createServer(function(request: any, response:any) {
 const userManager = new UserManager();
 const store = new InMemoryStore();
 
-server.listen(8080, function() {
-    console.log((new Date()) + ' Server is listening on port 8080');
+server.listen(8081, function() {
+    console.log((new Date()) + ' Server is listening on port 8081');
 });
 
 const wsServer = new WebSocketServer({
     httpServer: server,    
-    autoAcceptConnections: true
+    autoAcceptConnections: false
 });
 
 function originIsAllowed(origin: string) {
