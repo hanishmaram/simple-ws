@@ -6,18 +6,57 @@
     <title>Web Socker</title>
 </head>
 <body>
-    011
 
 
     <script>
         const ws = new WebSocket("ws://localhost:8081", "echo-protocol");
+        const userId = Math.floor(Math.random() * 1000);
 
         ws.onopen = function() {
-            alert("connected");
+            ws.send(JSON.stringify({
+                    "type":"JOIN_ROOM",
+                    "payload" : {
+                        "roomId":"1",
+                        "userId": userId,
+                        "name": "Hanish"    
+                    }
+                }));
         }
+
+        ws.onmessage = function (event) {
+            try {
+                const { payload, type } = JSON.parse(event.data);
+                if(type == "ADD_CHAT") {
+                    const textNode = document.createElement("p");
+                    textNode.innerHTML = payload.message + `(${payload.upvotes})`;
+                    document.getElementById("messages").appendChild(textNode);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function sendChat(){
+            ws.send(JSON.stringify({
+                    "type":"SEND_MESSAGE",
+                    "payload" : {
+                        "roomId":"1",
+                        "userId": "1",
+                        "message": document.getElementById("inputtext").value
+                    }
+                }));
+        } 
+
     </script>
 
-    Hello World!
+    
+    <br/>
+
+    <input type="text" id="inputtext" />
+    <div id="messages"></div>
+    <br/>
+
+    <button onclick="sendChat()">Send Chat</button>
 
 </body>
 </html>
